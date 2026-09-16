@@ -39,9 +39,12 @@ export default function Home() {
               Projects
             </a>
 
-            <button className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:scale-105 hover:bg-cyan-300">
-              Login
-            </button>
+            <a
+              href="/login"
+             className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:scale-105 hover:bg-cyan-300"
+              >
+             Login
+             </a>
           </div>
 
           {/* Mobile Button */}
@@ -69,9 +72,13 @@ export default function Home() {
               <a href="#projects" onClick={() => setMenuOpen(false)}>
                 Projects
               </a>
-              <button className="rounded-full bg-white px-5 py-3 font-semibold text-slate-950">
-                Login
-              </button>
+              <a
+                href="/login"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-full bg-white px-5 py-3 text-center font-semibold text-slate-950"
+               >
+                  Login
+                 </a>
             </div>
           </div>
         )}
