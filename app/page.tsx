@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import { useState } from "react";
 
@@ -29,13 +29,13 @@ export default function Home() {
             <a href="#" className="text-sm text-white transition hover:text-cyan-400">
               Home
             </a>
-            <a href="#about" className="text-sm text-slate-300 transition hover:text-cyan-400">
+            <a href="/about" className="text-sm text-slate-300 transition hover:text-cyan-400">
               About
             </a>
-            <a href="#events" className="text-sm text-slate-300 transition hover:text-cyan-400">
+            <a href="/events" className="text-sm text-slate-300 transition hover:text-cyan-400">
               Events
             </a>
-            <a href="#projects" className="text-sm text-slate-300 transition hover:text-cyan-400">
+            <a href="/projects" className="text-sm text-slate-300 transition hover:text-cyan-400">
               Projects
             </a>
 
