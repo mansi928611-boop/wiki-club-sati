@@ -1,6 +1,7 @@
- "use client";
+"use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -11,74 +12,113 @@ export default function Home() {
       <nav className="fixed top-0 z-50 w-full border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           {/* Logo */}
-          <a href="#" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 text-xl font-black shadow-lg shadow-blue-500/20">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 text-xl font-black shadow-lg shadow-blue-500/20 transition group-hover:scale-105">
               W
             </div>
 
             <div>
-              <h1 className="text-lg font-bold tracking-tight">
+              <h1 className="text-lg font-bold tracking-tight text-white group-hover:text-cyan-400 transition">
                 Wiki Club
               </h1>
-              <p className="text-xs text-slate-400">SATI</p>
+              <p className="text-xs text-slate-400">SATI Vidisha</p>
             </div>
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden items-center gap-8 md:flex">
-            <a href="#" className="text-sm text-white transition hover:text-cyan-400">
+          <div className="hidden items-center gap-7 md:flex">
+            <Link href="/" className="text-sm font-medium text-cyan-400">
               Home
-            </a>
-            <a href="/about" className="text-sm text-slate-300 transition hover:text-cyan-400">
+            </Link>
+            <Link
+              href="/about"
+              className="text-sm font-medium text-slate-300 transition hover:text-cyan-400"
+            >
               About
-            </a>
-            <a href="/events" className="text-sm text-slate-300 transition hover:text-cyan-400">
+            </Link>
+            <Link
+              href="/events"
+              className="text-sm font-medium text-slate-300 transition hover:text-cyan-400"
+            >
               Events
-            </a>
-            <a href="/projects" className="text-sm text-slate-300 transition hover:text-cyan-400">
+            </Link>
+            <Link
+              href="/projects"
+              className="text-sm font-medium text-slate-300 transition hover:text-cyan-400"
+            >
               Projects
-            </a>
+            </Link>
+            <Link
+              href="/wiki"
+              className="text-sm font-medium text-slate-300 transition hover:text-cyan-400"
+            >
+              Wiki
+            </Link>
 
-            <a
+            <Link
               href="/login"
-             className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:scale-105 hover:bg-cyan-300"
-              >
-             Login
-             </a>
+              className="rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-md shadow-cyan-500/20 transition hover:scale-105 hover:opacity-95"
+            >
+              Portal Login →
+            </Link>
           </div>
 
           {/* Mobile Button */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="rounded-lg border border-white/10 px-3 py-2 md:hidden"
+            aria-label="Toggle navigation menu"
+            className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 transition hover:bg-white/5 md:hidden"
           >
-            ☰
+            {menuOpen ? "✕" : "☰"}
           </button>
         </div>
 
         {/* Mobile Menu */}
         {menuOpen && (
           <div className="border-t border-white/10 bg-slate-950 px-6 py-5 md:hidden">
-            <div className="flex flex-col gap-5">
-              <a href="#" onClick={() => setMenuOpen(false)}>
+            <div className="flex flex-col gap-4">
+              <Link
+                href="/"
+                onClick={() => setMenuOpen(false)}
+                className="text-cyan-400 font-semibold py-1"
+              >
                 Home
-              </a>
-              <a href="#about" onClick={() => setMenuOpen(false)}>
+              </Link>
+              <Link
+                href="/about"
+                onClick={() => setMenuOpen(false)}
+                className="text-slate-300 transition hover:text-cyan-400 py-1"
+              >
                 About
-              </a>
-              <a href="#events" onClick={() => setMenuOpen(false)}>
+              </Link>
+              <Link
+                href="/events"
+                onClick={() => setMenuOpen(false)}
+                className="text-slate-300 transition hover:text-cyan-400 py-1"
+              >
                 Events
-              </a>
-              <a href="#projects" onClick={() => setMenuOpen(false)}>
+              </Link>
+              <Link
+                href="/projects"
+                onClick={() => setMenuOpen(false)}
+                className="text-slate-300 transition hover:text-cyan-400 py-1"
+              >
                 Projects
-              </a>
-              <a
+              </Link>
+              <Link
+                href="/wiki"
+                onClick={() => setMenuOpen(false)}
+                className="text-slate-300 transition hover:text-cyan-400 py-1"
+              >
+                Knowledge Wiki
+              </Link>
+              <Link
                 href="/login"
                 onClick={() => setMenuOpen(false)}
-                className="rounded-full bg-white px-5 py-3 text-center font-semibold text-slate-950"
-               >
-                  Login
-                 </a>
+                className="mt-2 rounded-full bg-cyan-400 px-5 py-3 text-center font-bold text-slate-950"
+              >
+                Member / Coordinator Login
+              </Link>
             </div>
           </div>
         )}
@@ -95,7 +135,7 @@ export default function Home() {
           <div>
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-300">
               <span className="h-2 w-2 animate-pulse rounded-full bg-cyan-400" />
-              Student Community • SATI
+              Student Community • SATI Vidisha
             </div>
 
             <h2 className="max-w-4xl text-5xl font-black leading-tight tracking-tight sm:text-6xl lg:text-7xl">
@@ -107,40 +147,42 @@ export default function Home() {
             </h2>
 
             <p className="mt-7 max-w-xl text-lg leading-8 text-slate-400">
-              Wiki Club SATI is a community where students learn together,
-              build meaningful projects, share knowledge, and grow into
-              future leaders.
+              Wiki Club SATI is a premier student community where engineers learn together,
+              build open-source software, share verified knowledge, and elect their board democratically.
             </p>
 
             <div className="mt-9 flex flex-col gap-4 sm:flex-row">
-              <button className="group rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-7 py-3.5 font-bold text-slate-950 shadow-xl shadow-cyan-500/20 transition hover:-translate-y-1">
+              <Link
+                href="/login"
+                className="group inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-7 py-3.5 font-bold text-slate-950 shadow-xl shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:shadow-cyan-500/30"
+              >
                 Join the Club
-                <span className="ml-2 transition group-hover:ml-3">→</span>
-              </button>
+                <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
+              </Link>
 
-              <a
-                href="#projects"
-                className="rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-center font-semibold backdrop-blur transition hover:bg-white/10"
+              <Link
+                href="/projects"
+                className="rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-center font-semibold backdrop-blur transition hover:bg-white/10 hover:border-cyan-400/40"
               >
                 Explore Projects
-              </a>
+              </Link>
             </div>
 
             {/* Small stats */}
             <div className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-white/10 pt-8">
               <div>
-                <p className="text-2xl font-bold">100+</p>
-                <p className="mt-1 text-xs text-slate-500">Students</p>
+                <p className="text-2xl font-bold text-cyan-400">100+</p>
+                <p className="mt-1 text-xs text-slate-400">Students</p>
               </div>
 
               <div>
-                <p className="text-2xl font-bold">25+</p>
-                <p className="mt-1 text-xs text-slate-500">Projects</p>
+                <p className="text-2xl font-bold text-blue-400">25+</p>
+                <p className="mt-1 text-xs text-slate-400">Projects</p>
               </div>
 
               <div>
-                <p className="text-2xl font-bold">50+</p>
-                <p className="mt-1 text-xs text-slate-500">Events</p>
+                <p className="text-2xl font-bold text-purple-400">50+</p>
+                <p className="mt-1 text-xs text-slate-400">Events & Talks</p>
               </div>
             </div>
           </div>
@@ -154,11 +196,12 @@ export default function Home() {
               <div className="mb-6 flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-400">Club Dashboard</p>
-                  <h3 className="mt-1 text-xl font-bold">Wiki Club SATI</h3>
+                  <h3 className="mt-1 text-xl font-bold text-white">Wiki Club SATI</h3>
                 </div>
 
-                <div className="rounded-xl bg-cyan-400/10 px-3 py-2 text-xs text-cyan-300">
-                  Active
+                <div className="flex items-center gap-2 rounded-xl bg-cyan-400/10 px-3 py-2 text-xs font-semibold text-cyan-300 border border-cyan-400/30">
+                  <span className="h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
+                  Active Portal
                 </div>
               </div>
 
@@ -166,10 +209,10 @@ export default function Home() {
               <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-400">
-                    Contributions
+                    Contributions Growth
                   </span>
                   <span className="text-sm font-semibold text-cyan-300">
-                    +24%
+                    +24% this semester
                   </span>
                 </div>
 
@@ -179,31 +222,37 @@ export default function Home() {
                   <div className="h-20 w-8 rounded-t-lg bg-blue-400/50" />
                   <div className="h-32 w-8 rounded-t-lg bg-blue-400/70" />
                   <div className="h-28 w-8 rounded-t-lg bg-purple-400/60" />
-                  <div className="h-40 w-8 rounded-t-lg bg-cyan-300" />
+                  <div className="h-40 w-8 rounded-t-lg bg-cyan-300 shadow-lg shadow-cyan-400/50" />
                 </div>
               </div>
 
               {/* Activity cards */}
               <div className="mt-4 grid grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <Link
+                  href="/projects"
+                  className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.08] hover:border-cyan-400/40"
+                >
                   <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-xl">
                     🚀
                   </div>
                   <p className="text-sm font-semibold">Projects</p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-slate-400">
                     Build & create
                   </p>
-                </div>
+                </Link>
 
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <Link
+                  href="/wiki"
+                  className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.08] hover:border-cyan-400/40"
+                >
                   <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-xl">
-                    🏆
+                    📚
                   </div>
-                  <p className="text-sm font-semibold">Achievements</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Grow together
+                  <p className="text-sm font-semibold">Knowledge Wiki</p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Open articles
                   </p>
-                </div>
+                </Link>
               </div>
             </div>
           </div>
@@ -257,7 +306,7 @@ export default function Home() {
           <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-400">
-                What's happening
+                What&apos;s happening
               </p>
 
               <h2 className="mt-3 text-4xl font-bold">
@@ -265,9 +314,12 @@ export default function Home() {
               </h2>
             </div>
 
-            <button className="w-fit text-sm font-semibold text-cyan-300 hover:text-cyan-200">
+            <Link
+              href="/events"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-cyan-400 transition hover:text-cyan-300 hover:translate-x-1"
+            >
               View all events →
-            </button>
+            </Link>
           </div>
 
           <div className="mt-10 grid gap-5 md:grid-cols-3">
@@ -306,7 +358,7 @@ export default function Home() {
 
             <p className="mt-5 text-slate-400">
               From technical projects to knowledge resources, every
-              contribution can become part of the club's growing community.
+              contribution can become part of the club&apos;s growing community.
             </p>
           </div>
 
@@ -327,7 +379,7 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden border-t border-white/10">
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10" />
 
         <div className="relative mx-auto max-w-5xl px-6 py-28 text-center">
@@ -344,9 +396,21 @@ export default function Home() {
             projects and grow together.
           </p>
 
-          <button className="mt-9 rounded-full bg-white px-8 py-4 font-bold text-slate-950 transition hover:-translate-y-1 hover:bg-cyan-300">
-            Join Wiki Club SATI →
-          </button>
+          <div className="mt-9 flex flex-wrap justify-center gap-4">
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-bold text-slate-950 transition hover:-translate-y-0.5 hover:bg-cyan-300"
+            >
+              Join Wiki Club SATI →
+            </Link>
+
+            <Link
+              href="/about"
+              className="rounded-full border border-white/15 bg-white/5 px-8 py-4 font-semibold text-white transition hover:bg-white/10"
+            >
+              Learn More
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -354,10 +418,18 @@ export default function Home() {
       <footer className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-8 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-bold">Wiki Club SATI</p>
-            <p className="mt-1 text-sm text-slate-500">
-              Learn • Contribute • Lead
+            <p className="font-bold text-white">Wiki Club SATI</p>
+            <p className="mt-1 text-sm text-slate-400">
+              Learn • Contribute • Lead • Samrat Ashok Technological Institute
             </p>
+          </div>
+
+          <div className="flex items-center gap-6 text-sm text-slate-400">
+            <Link href="/about" className="hover:text-cyan-400 transition">About</Link>
+            <Link href="/events" className="hover:text-cyan-400 transition">Events</Link>
+            <Link href="/projects" className="hover:text-cyan-400 transition">Projects</Link>
+            <Link href="/wiki" className="hover:text-cyan-400 transition">Wiki</Link>
+            <Link href="/login" className="hover:text-cyan-400 transition">Login</Link>
           </div>
 
           <p className="text-sm text-slate-500">
@@ -379,7 +451,7 @@ function InfoCard({
   text: string;
 }) {
   return (
-    <div className="group rounded-3xl border border-white/10 bg-white/[0.03] p-7 transition duration-300 hover:-translate-y-1 hover:bg-white/[0.06]">
+    <div className="group rounded-3xl border border-white/10 bg-white/[0.03] p-7 transition duration-300 hover:-translate-y-1 hover:border-cyan-400/40 hover:bg-white/[0.06]">
       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-400/10 text-2xl">
         {icon}
       </div>
@@ -401,16 +473,21 @@ function EventCard({
   text: string;
 }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-7 transition duration-300 hover:-translate-y-1 hover:border-cyan-400/30">
-      <p className="text-sm font-bold text-cyan-400">{number}</p>
+    <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-7 transition duration-300 hover:-translate-y-1 hover:border-cyan-400/40 flex flex-col justify-between">
+      <div>
+        <p className="text-sm font-bold text-cyan-400">{number}</p>
 
-      <h3 className="mt-12 text-2xl font-bold">{title}</h3>
+        <h3 className="mt-8 text-2xl font-bold">{title}</h3>
 
-      <p className="mt-4 leading-7 text-slate-400">{text}</p>
+        <p className="mt-4 leading-7 text-slate-400">{text}</p>
+      </div>
 
-      <button className="mt-7 text-sm font-semibold text-white">
+      <Link
+        href="/events"
+        className="mt-7 inline-flex items-center gap-1 text-sm font-semibold text-cyan-300 transition hover:text-cyan-200"
+      >
         Learn more →
-      </button>
+      </Link>
     </div>
   );
 }
@@ -425,18 +502,23 @@ function ProjectCard({
   text: string;
 }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-8">
-      <span className="rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-300">
-        {tag}
-      </span>
+    <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-8 flex flex-col justify-between transition hover:border-cyan-400/30">
+      <div>
+        <span className="rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-300 border border-cyan-400/20">
+          {tag}
+        </span>
 
-      <h3 className="mt-6 text-2xl font-bold">{title}</h3>
+        <h3 className="mt-6 text-2xl font-bold">{title}</h3>
 
-      <p className="mt-4 max-w-xl leading-7 text-slate-400">{text}</p>
+        <p className="mt-4 max-w-xl leading-7 text-slate-400">{text}</p>
+      </div>
 
-      <button className="mt-7 text-sm font-semibold text-white">
+      <Link
+        href="/projects"
+        className="mt-7 inline-flex items-center gap-1 text-sm font-semibold text-cyan-300 transition hover:text-cyan-200"
+      >
         Explore project →
-      </button>
+      </Link>
     </div>
   );
 }

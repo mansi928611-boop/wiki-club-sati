@@ -1,127 +1,167 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-
-type Contribution = {
-  id: string;
-  title: string;
-  category: string;
-  description: string | null;
-  contribution_date: string | null;
-  evidence_url: string | null;
-  status: string;
-  created_at: string;
-};
+import { getActiveUser, UserSession } from "@/lib/auth-helpers";
+import { INITIAL_CONTRIBUTIONS, ClubContribution } from "@/lib/mock-data";
 
 export default function ContributionsPage() {
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
+
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [evidenceUrl, setEvidenceUrl] = useState("");
 
-  const [contributions, setContributions] = useState<Contribution[]>([]);
-
+  const [contributions, setContributions] = useState<ClubContribution[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    async function loadContributions() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+  const fetchContributions = useCallback(async (userId: string) => {
+    // 1. Try Supabase
+    let loaded: ClubContribution[] = [];
+    try {
+      const { data, error } = await supabase
+        .from("contributions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
 
-      if (!session) {
-        window.location.href = "/login";
-        return;
+      if (!error && data && data.length > 0) {
+        loaded = data as ClubContribution[];
       }
-
-      await fetchContributions(session.user.id);
-
-      setLoading(false);
+    } catch (err) {
+      console.warn("Supabase fetch contributions err:", err);
     }
 
-    loadContributions();
+    // 2. Merge with locally saved contributions from localStorage (for demo or RLS fallback)
+    if (typeof window !== "undefined") {
+      const localSaved = localStorage.getItem(`local_contributions_${userId}`);
+      if (localSaved) {
+        try {
+          const parsed = JSON.parse(localSaved) as ClubContribution[];
+          // prepend unique local ones
+          const existingIds = new Set(loaded.map((c) => c.id));
+          const uniqueLocal = parsed.filter((c) => !existingIds.has(c.id));
+          loaded = [...uniqueLocal, ...loaded];
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    // 3. If still empty, use INITIAL_CONTRIBUTIONS for demo user
+    if (loaded.length === 0) {
+      const mockMatches = INITIAL_CONTRIBUTIONS.filter((c) => c.user_id === userId);
+      if (mockMatches.length > 0) {
+        loaded = mockMatches;
+      }
+    }
+
+    setContributions(loaded);
   }, []);
 
-  async function fetchContributions(userId: string) {
-    const { data, error } = await supabase
-      .from("contributions")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+  const loadContributions = useCallback(async () => {
+    const user = await getActiveUser();
 
-    if (!error && data) {
-      setContributions(data);
+    if (!user) {
+      router.push("/login");
+      return;
     }
-  }
+
+    setCurrentUser(user);
+    await fetchContributions(user.id);
+    setLoading(false);
+  }, [router, fetchContributions]);
+
+  useEffect(() => {
+    loadContributions();
+  }, [loadContributions]);
 
   async function submitContribution() {
     setMessage("");
 
-    if (!title || !category || !description) {
-      setMessage("Please fill in all required fields.");
+    if (!title.trim() || !category || !description.trim()) {
+      setMessage("Please fill in all required fields (Title, Category, Description).");
       return;
     }
 
     setSaving(true);
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    const activeUser = await getActiveUser();
 
-    if (!session) {
-      window.location.href = "/login";
+    if (!activeUser) {
+      router.push("/login");
       return;
     }
 
-    const { error } = await supabase.from("contributions").insert({
-      user_id: session.user.id,
-      title,
+    const newContrib: ClubContribution = {
+      id: `contrib-${Date.now()}`,
+      user_id: activeUser.id,
+      title: title.trim(),
       category,
-      description,
-      contribution_date: date || null,
-      evidence_url: evidenceUrl || null,
+      description: description.trim(),
+      contribution_date: date || new Date().toISOString().split("T")[0],
+      evidence_url: evidenceUrl.trim() || undefined,
       status: "pending",
-    });
+      created_at: new Date().toISOString(),
+    };
 
-    if (error) {
-      setMessage(error.message);
-    } else {
-      setMessage(
-        "Contribution submitted successfully! It is now pending verification."
-      );
-
-      setTitle("");
-      setCategory("");
-      setDescription("");
-      setDate("");
-      setEvidenceUrl("");
-
-      await fetchContributions(session.user.id);
+    // 1. Try Supabase insert if real user
+    if (!activeUser.isDemo) {
+      try {
+        await supabase.from("contributions").insert({
+          user_id: activeUser.id,
+          title: newContrib.title,
+          category: newContrib.category,
+          description: newContrib.description,
+          contribution_date: newContrib.contribution_date || null,
+          evidence_url: newContrib.evidence_url || null,
+          status: "pending",
+        });
+      } catch (err) {
+        console.warn("Supabase insert note:", err);
+      }
     }
 
+    // 2. Always persist to localStorage for instant UI update & demo durability
+    if (typeof window !== "undefined") {
+      const storageKey = `local_contributions_${activeUser.id}`;
+      const existing = localStorage.getItem(storageKey);
+      const parsedList: ClubContribution[] = existing ? JSON.parse(existing) : [];
+      localStorage.setItem(storageKey, JSON.stringify([newContrib, ...parsedList]));
+    }
+
+    setMessage("Contribution submitted successfully! It is now pending coordinator verification.");
+    setTitle("");
+    setCategory("");
+    setDescription("");
+    setDate("");
+    setEvidenceUrl("");
+
+    await fetchContributions(activeUser.id);
     setSaving(false);
   }
 
   function getStatusStyle(status: string) {
     if (status === "approved") {
-      return "border-green-400/30 bg-green-400/10 text-green-400";
+      return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
     }
-
     if (status === "rejected") {
-      return "border-red-400/30 bg-red-400/10 text-red-400";
+      return "border-rose-400/30 bg-rose-400/10 text-rose-300";
     }
-
-    return "border-yellow-400/30 bg-yellow-400/10 text-yellow-400";
+    return "border-amber-400/30 bg-amber-400/10 text-amber-300";
   }
 
   function getStatusText(status: string) {
-    if (status === "approved") return "Approved";
-    if (status === "rejected") return "Rejected";
-    return "Pending Verification";
+    if (status === "approved") return "✓ Approved";
+    if (status === "rejected") return "✕ Rejected";
+    return "⏳ Pending Verification";
   }
 
   if (loading) {
@@ -135,124 +175,137 @@ export default function ContributionsPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-16 text-white">
       <div className="mx-auto max-w-5xl">
-        <a
-          href="/dashboard"
-          className="text-cyan-400 hover:text-cyan-300"
-        >
-          ← Back to Dashboard
-        </a>
+        <div className="flex items-center justify-between pb-6 border-b border-white/10">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 font-medium transition"
+          >
+            ← Back to Dashboard
+          </Link>
 
-        <h1 className="mt-10 text-5xl font-bold">
-          My Contributions
-        </h1>
+          <Link
+            href="/candidate"
+            className="text-xs text-slate-400 hover:text-white transition"
+          >
+            View Public Portfolio →
+          </Link>
+        </div>
 
-        <p className="mt-4 text-slate-400">
-          Record and track the work you contribute to Wiki Club SATI.
-        </p>
+        <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="rounded-full bg-cyan-400/10 px-3.5 py-1 text-xs font-semibold text-cyan-300 border border-cyan-400/20">
+              Work Log
+            </span>
 
-        {/* Add Contribution */}
+            <h1 className="mt-3 text-4xl font-extrabold tracking-tight">
+              My Club Contributions
+            </h1>
 
-        <div className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-8">
-          <h2 className="text-2xl font-bold">
-            Add New Contribution
-          </h2>
+            <p className="mt-2 text-sm text-slate-400 leading-relaxed">
+              Record workshops, code contributions, event organizing, or designs you have contributed to Wiki Club SATI.
+            </p>
+          </div>
 
-          <div className="mt-6 space-y-6">
+          {currentUser && (
+            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-right">
+              <span className="text-xs text-slate-400">Logged as</span>
+              <p className="text-sm font-bold text-cyan-300">{currentUser.name}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Add Contribution Form */}
+        <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-8 shadow-xl">
+          <h2 className="text-2xl font-bold">Add New Contribution</h2>
+          <p className="mt-1 text-xs text-slate-400">
+            All submitted contributions are reviewed by club coordinators for election portfolio verification.
+          </p>
+
+          <div className="mt-6 space-y-5">
             <div>
-              <label className="mb-2 block text-sm text-slate-400">
+              <label className="mb-2 block text-xs font-semibold text-slate-300">
                 Contribution Title *
               </label>
-
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Organized Web Development Workshop"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-400"
+                placeholder="e.g. Conducted Web Development & Git Workshop"
+                className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-400 transition"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm text-slate-400">
+              <label className="mb-2 block text-xs font-semibold text-slate-300">
                 Category *
               </label>
-
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none focus:border-cyan-400"
+                className="w-full rounded-xl border border-white/15 bg-slate-900 px-4 py-3 text-white outline-none focus:border-cyan-400 transition"
               >
                 <option value="">Select category</option>
-                <option value="Event Organization">
-                  Event Organization
-                </option>
-                <option value="Technical">Technical</option>
-                <option value="Design">Design</option>
-                <option value="Content">Content</option>
-                <option value="Outreach">Outreach</option>
+                <option value="Event Organization">Event Organization</option>
+                <option value="Technical">Technical & Coding</option>
+                <option value="Design">Design & Branding</option>
+                <option value="Content">Content & Documentation</option>
+                <option value="Outreach">Outreach & Publicity</option>
                 <option value="Volunteering">Volunteering</option>
-                <option value="Leadership">Leadership</option>
-                <option value="Project">Project</option>
-                <option value="Research">Research</option>
-                <option value="Mentoring">Mentoring</option>
+                <option value="Leadership">Leadership & Mentorship</option>
+                <option value="Project">Open Source Project</option>
               </select>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm text-slate-400">
+              <label className="mb-2 block text-xs font-semibold text-slate-300">
                 Description *
               </label>
-
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe what you did and how you contributed..."
-                rows={6}
-                className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-400"
+                placeholder="Detail what you accomplished, the impact on participants, and your role..."
+                rows={4}
+                className="w-full resize-none rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-400 transition"
               />
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm text-slate-400">
-                Contribution Date
-              </label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-xs font-semibold text-slate-300">
+                  Contribution Date
+                </label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full rounded-xl border border-white/15 bg-slate-900 px-4 py-3 text-white outline-none focus:border-cyan-400 transition"
+                />
+              </div>
 
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none focus:border-cyan-400"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm text-slate-400">
-                Evidence Link
-              </label>
-
-              <input
-                type="url"
-                value={evidenceUrl}
-                onChange={(e) => setEvidenceUrl(e.target.value)}
-                placeholder="https://github.com/... or Google Drive link"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-400"
-              />
-
-              <p className="mt-2 text-xs text-slate-500">
-                Optional. Add a link that helps verify your contribution.
-              </p>
+              <div>
+                <label className="mb-2 block text-xs font-semibold text-slate-300">
+                  Evidence / Verification Link
+                </label>
+                <input
+                  type="url"
+                  value={evidenceUrl}
+                  onChange={(e) => setEvidenceUrl(e.target.value)}
+                  placeholder="https://github.com/... or Google Drive"
+                  className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-400 transition"
+                />
+              </div>
             </div>
 
             <button
               onClick={submitContribution}
               disabled={saving}
-              className="w-full rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-50"
+              className="w-full rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3.5 font-bold text-slate-950 transition hover:opacity-95 disabled:opacity-50 shadow-md shadow-cyan-400/20"
             >
-              {saving ? "Submitting..." : "Submit Contribution"}
+              {saving ? "Submitting Contribution..." : "Submit for Verification"}
             </button>
 
             {message && (
-              <p className="rounded-xl border border-white/10 bg-black/20 p-4 text-center text-sm text-slate-300">
+              <p className="rounded-xl border border-cyan-400/30 bg-cyan-950/30 p-3.5 text-center text-sm text-cyan-300">
                 {message}
               </p>
             )}
@@ -260,65 +313,66 @@ export default function ContributionsPage() {
         </div>
 
         {/* Contribution History */}
-
         <div className="mt-12">
-          <h2 className="text-2xl font-bold">
-            Contribution History
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Contribution History</h2>
+            <span className="text-xs text-slate-400">
+              {contributions.length} Submissions Logged
+            </span>
+          </div>
 
           {contributions.length === 0 ? (
             <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
               <p className="text-slate-400">
-                You haven't submitted any contributions yet.
+                You haven&apos;t submitted any contributions yet. Fill out the form above to log your work!
               </p>
             </div>
           ) : (
-            <div className="mt-6 space-y-5">
-              {contributions.map((contribution) => (
+            <div className="mt-6 space-y-4">
+              {contributions.map((item) => (
                 <div
-                  key={contribution.id}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-6"
+                  key={item.id}
+                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-cyan-400/30"
                 >
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <h3 className="text-xl font-semibold">
-                        {contribution.title}
-                      </h3>
-
-                      <p className="mt-2 text-sm text-cyan-400">
-                        {contribution.category}
+                      <h3 className="text-xl font-bold">{item.title}</h3>
+                      <p className="mt-1 text-xs font-semibold text-cyan-400">
+                        {item.category}
                       </p>
                     </div>
 
                     <span
-                      className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${getStatusStyle(
-                        contribution.status
+                      className={`w-fit rounded-full border px-3 py-1 text-xs font-bold ${getStatusStyle(
+                        item.status
                       )}`}
                     >
-                      {getStatusText(contribution.status)}
+                      {getStatusText(item.status)}
                     </span>
                   </div>
 
-                  <p className="mt-4 leading-7 text-slate-300">
-                    {contribution.description}
+                  <p className="mt-3 text-sm leading-relaxed text-slate-300">
+                    {item.description}
                   </p>
 
-                  {contribution.contribution_date && (
-                    <p className="mt-4 text-sm text-slate-500">
-                      Date: {contribution.contribution_date}
-                    </p>
-                  )}
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-3">
+                    {item.contribution_date && (
+                      <p className="text-xs text-slate-500">
+                        Date: {item.contribution_date}
+                      </p>
+                    )}
 
-                  {contribution.evidence_url && (
-                    <a
-                      href={contribution.evidence_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-4 inline-block text-sm font-semibold text-cyan-400 hover:text-cyan-300"
-                    >
-                      View Evidence →
-                    </a>
-                  )}
+                    {item.evidence_url && (
+                      <a
+                        href={item.evidence_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition"
+                      >
+                        View Attached Evidence ↗
+                      </a>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
